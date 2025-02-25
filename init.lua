@@ -4,21 +4,6 @@ vim.cmd("set softtabstop=2")
 vim.cmd("set shiftwidth=2")
 vim.g.mapleader = ' '
 
-vim.cmd([[
-  cnoreabbrev <expr> q! getcmdtype() == ":" && getcmdline() == 'q!' ? 'qa!' : 'q!'
-]])
-vim.cmd([[
-  tnoremap <Esc> <C-\><C-n>
-]])
-
--- NORMAL mode: move the current line up/down
-vim.keymap.set('n', '<C-S-Up>',   ':m .-2<CR>==', { noremap = true, silent = true })
-vim.keymap.set('n', '<C-S-Down>', ':m .+1<CR>==', { noremap = true, silent = true })
-
--- VISUAL mode: move the highlighted lines up/down
-vim.keymap.set('v', '<C-S-Up>',   ":m '<-2<CR>gv=gv", { noremap = true, silent = true })
-vim.keymap.set('v', '<C-S-Down>', ":m '>+1<CR>gv=gv", { noremap = true, silent = true })
-
 vim.api.nvim_create_autocmd("VimEnter", {
   callback = function()
     vim.defer_fn(function()
@@ -116,6 +101,33 @@ vim.api.nvim_set_keymap("x", "<S-Tab>", "<gv", { noremap = true, silent = true }
 vim.keymap.set('n', '<C-p>', builtin.find_files, {})
 vim.keymap.set('n', '<leader>fg', builtin.live_grep, {})
 vim.keymap.set('n', '<C-n>', ':Neotree filesystem reveal left<CR>')
+vim.keymap.set('n', '<D-a>', 'ggVG', { noremap = true, silent = true })
+
+-- Map Command + c to copy (yank to system clipboard)
+vim.keymap.set({'n','v'}, '<D-c>', '"+y', { noremap = true, silent = true })
+
+-- Map Command + v to paste (from system clipboard)
+vim.keymap.set({'n','v'}, '<D-v>', '"+p', { noremap = true, silent = true })
+
+vim.keymap.set('n', '<D-z>', 'u', { noremap = true, silent = true })
+
+-- Optionally, in INSERT mode, Command+v for paste:
+vim.keymap.set('i', '<D-v>', '<Esc>"+pa', { noremap = true, silent = true })
+
+vim.cmd([[
+  cnoreabbrev <expr> q! getcmdtype() == ":" && getcmdline() == 'q!' ? 'qa!' : 'q!'
+]])
+vim.cmd([[
+  tnoremap <Esc> <C-\><C-n>
+]])
+
+-- NORMAL mode: move the current line up/down
+vim.keymap.set('n', '<D-S-Up>',   ':m .-2<CR>==', { noremap = true, silent = true })
+vim.keymap.set('n', '<D-S-Down>', ':m .+1<CR>==', { noremap = true, silent = true })
+
+-- VISUAL mode: move the highlighted lines up/down
+vim.keymap.set('v', '<D-S-Up>',   ":m '<-2<CR>gv=gv", { noremap = true, silent = true })
+vim.keymap.set('v', '<D-S-Down>', ":m '>+1<CR>gv=gv", { noremap = true, silent = true })
 
 local config = require("nvim-treesitter.configs")
 config.setup({
