@@ -4,10 +4,32 @@ vim.cmd("set softtabstop=2")
 vim.cmd("set shiftwidth=2")
 vim.g.mapleader = ' '
 
+vim.cmd([[
+  cnoreabbrev <expr> q! getcmdtype() == ":" && getcmdline() == 'q!' ? 'qa!' : 'q!'
+]])
+vim.cmd([[
+  tnoremap <Esc> <C-\><C-n>
+]])
+
+-- NORMAL mode: move the current line up/down
+vim.keymap.set('n', '<C-S-Up>',   ':m .-2<CR>==', { noremap = true, silent = true })
+vim.keymap.set('n', '<C-S-Down>', ':m .+1<CR>==', { noremap = true, silent = true })
+
+-- VISUAL mode: move the highlighted lines up/down
+vim.keymap.set('v', '<C-S-Up>',   ":m '<-2<CR>gv=gv", { noremap = true, silent = true })
+vim.keymap.set('v', '<C-S-Down>', ":m '>+1<CR>gv=gv", { noremap = true, silent = true })
+
 vim.api.nvim_create_autocmd("VimEnter", {
   callback = function()
-    vim.cmd("Neotree reveal filesystem left")
-    vim.cmd("ToggleTerm")
+    vim.defer_fn(function()
+      vim.cmd("ToggleTerm")
+      local args = vim.fn.argv()
+      if #args == 1 and vim.fn.isdirectory(args[1]) == 1 then
+        -- Skip Neo-tree
+      else
+        vim.cmd("Neotree filesystem show left")
+      end
+    end, 50)
   end,
 })
 
@@ -18,7 +40,7 @@ if not vim.loop.fs_stat(lazypath) then
     "clone",
     "--filter=blob:none",
     "https://github.com/folke/lazy.nvim.git",
-    "--branch=stable", -- latest stable release
+    "--branch=stable",
     lazypath,
   })
 end
@@ -52,7 +74,10 @@ local plugins = {
           start_in_insert = true,
           persist_size = true,
           close_on_exit = true,
-        }
+          dir = function()
+            return vim.fn.getcwd()
+          end,  
+      }
       end,
     },
     {
@@ -64,6 +89,21 @@ local plugins = {
       init = function() vim.g.barbar_auto_setup = false end,
       opts = {},
       version = '^1.0.0',
+    },
+    {
+      "ahmedkhalf/project.nvim",
+      config = function()
+      require("project_nvim").setup({
+        manual_mode = true,
+        detection_methods = { "lsp", "pattern" },
+        patterns = { ".git", "package.json", "Makefile", "README.md" },
+      })
+
+      local status_ok, telescope = pcall(require, "telescope")
+      if status_ok then
+      telescope.load_extension("projects")
+      end
+      end,
     },
 }
 local opts = {}
