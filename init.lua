@@ -2,13 +2,17 @@ vim.cmd("set expandtab")
 vim.cmd("set tabstop=2")
 vim.cmd("set softtabstop=2")
 vim.cmd("set shiftwidth=2")
+vim.cmd("set number")   
 vim.g.mapleader = ' '
 
 vim.api.nvim_create_autocmd("VimEnter", {
   callback = function()
     vim.defer_fn(function()
-      vim.cmd("ToggleTerm")
       local args = vim.fn.argv()
+      if #args == 0 then
+        return
+      end
+      vim.cmd("ToggleTerm")
       if #args == 1 and vim.fn.isdirectory(args[1]) == 1 then
         -- Skip Neo-tree
       else
@@ -90,7 +94,56 @@ local plugins = {
       end
       end,
     },
+    {
+      'glepnir/dashboard-nvim',
+      event = 'VimEnter',
+      config = function()
+        require('dashboard').setup {
+          theme = 'hyper',
+          config = {
+          header = {
+        " ▄████████  ▄██████▄    ▄▄▄▄███▄▄▄▄      ▄████████             ",
+        "███    ███ ███    ███ ▄██▀▀▀███▀▀▀██▄   ███    ███             ",
+        "███    █▀  ███    ███ ███   ███   ███   ███    █▀              ",
+        "███        ███    ███ ███   ███   ███  ▄███▄▄▄                 ",
+        "███        ███    ███ ███   ███   ███ ▀▀███▀▀▀                 ",
+        "███    █▄  ███    ███ ███   ███   ███   ███    █▄              ",
+        "███    ███ ███    ███ ███   ███   ███   ███    ███             ",
+        "████████▀   ▀██████▀   ▀█   ███   █▀    ██████████             ",
+        "                                                                ",
+        " ▄██████▄  ███▄▄▄▄        ▄██   ▄    ▄██████▄  ███    █▄        ",
+        "███    ███ ███▀▀▀██▄      ███   ██▄ ███    ███ ███    ███       ",
+        "███    ███ ███   ███      ███▄▄▄███ ███    ███ ███    ███       ",
+        "███    ███ ███   ███      ▀▀▀▀▀▀███ ███    ███ ███    ███       ",
+        "███    ███ ███   ███      ▄██   ███ ███    ███ ███    ███       ",
+        "███    ███ ███   ███      ███   ███ ███    ███ ███    ███       ",
+        "███    ███ ███   ███      ███   ███ ███    ███ ███    ███       ",
+        " ▀██████▀   ▀█   █▀        ▀█████▀   ▀██████▀  ████████▀        ",
+        "                                                                ",
+        "   ▄████████    ▄███████▄ ███    █▄     ▄████████    ▄████████  ",
+        "  ███    ███   ███    ███ ███    ███   ███    ███   ███    ███  ",
+        "  ███    █▀    ███    ███ ███    ███   ███    ███   ███    █▀   ",
+        "  ███          ███    ███ ███    ███  ▄███▄▄▄▄██▀   ███          ",
+        "▀███████████ ▀█████████▀  ███    ███ ▀▀███▀▀▀▀▀   ▀███████████  ",
+        "         ███   ███        ███    ███ ▀███████████          ███  ",
+        "   ▄█    ███   ███        ███    ███   ███    ███    ▄█    ███  ",
+        " ▄████████▀   ▄████▀      ████████▀    ███    ███  ▄████████▀   ",
+        "                                       ███    ███               ",
+      },
+        center = {
+          { icon = " ", desc = " Find File", action = "Telescope find_files", key = "f" },
+          { icon = " ", desc = " Recent Files", action = "Telescope oldfiles", key = "r" },
+          { icon = " ", desc = " Find Word", action = "Telescope live_grep", key = "g" },
+          { icon = " ", desc = " Restore Session", action = "SessionLoad", key = "s" },
+        },
+        footer = { "🚀 Neovim powered by Lazy.nvim" }
+      }
+    }
+    end
+  },
 }
+
+
 local opts = {}
 
 require("lazy").setup(plugins, opts)
@@ -103,16 +156,19 @@ vim.keymap.set('n', '<leader>fg', builtin.live_grep, {})
 vim.keymap.set('n', '<C-n>', ':Neotree filesystem reveal left<CR>')
 vim.keymap.set('n', '<D-a>', 'ggVG', { noremap = true, silent = true })
 
--- Map Command + c to copy (yank to system clipboard)
+-- Copy to system clipboard in NORMAL/ VISUAL
 vim.keymap.set({'n','v'}, '<D-c>', '"+y', { noremap = true, silent = true })
+vim.keymap.set({'n','v'}, '<C-c>', '"+y', { noremap = true, silent = true })
 
--- Map Command + v to paste (from system clipboard)
+-- Paste from system clipboard in NORMAL/ VISUAL
 vim.keymap.set({'n','v'}, '<D-v>', '"+p', { noremap = true, silent = true })
+vim.keymap.set({'n','v'}, '<C-v>', '"+p', { noremap = true, silent = true })
 
-vim.keymap.set('n', '<D-z>', 'u', { noremap = true, silent = true })
-
--- Optionally, in INSERT mode, Command+v for paste:
+-- Paste from system clipboard in INSERT
 vim.keymap.set('i', '<D-v>', '<Esc>"+pa', { noremap = true, silent = true })
+
+-- Undo in NORMAL/ VISUAL with Command + z
+vim.keymap.set({'n','v'}, '<D-z>', 'u', { noremap = true, silent = true })
 
 vim.cmd([[
   cnoreabbrev <expr> q! getcmdtype() == ":" && getcmdline() == 'q!' ? 'qa!' : 'q!'
@@ -124,10 +180,18 @@ vim.cmd([[
 -- NORMAL mode: move the current line up/down
 vim.keymap.set('n', '<D-S-Up>',   ':m .-2<CR>==', { noremap = true, silent = true })
 vim.keymap.set('n', '<D-S-Down>', ':m .+1<CR>==', { noremap = true, silent = true })
-
 -- VISUAL mode: move the highlighted lines up/down
 vim.keymap.set('v', '<D-S-Up>',   ":m '<-2<CR>gv=gv", { noremap = true, silent = true })
 vim.keymap.set('v', '<D-S-Down>', ":m '>+1<CR>gv=gv", { noremap = true, silent = true })
+
+-- NORMAL mode: duplicate the current line above/below
+-- <D-Up>   -> yank this line, then paste above
+-- <D-Down> -> yank this line, then paste below
+vim.keymap.set('n', '<D-Up>',   'yyP', { noremap = true, silent = true })
+vim.keymap.set('n', '<D-Down>', 'yyp', { noremap = true, silent = true })
+-- VISUAL mode: move the highlighted lines up/down
+vim.keymap.set('v', '<D-Down>', ":m '>+1<CR>gv=gv", { noremap = true, silent = true })
+vim.keymap.set('v', '<D-Up>',   ":m '<-2<CR>gv=gv", { noremap = true, silent = true })
 
 local config = require("nvim-treesitter.configs")
 config.setup({
