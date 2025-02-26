@@ -3,7 +3,7 @@ vim.cmd("set tabstop=2")
 vim.cmd("set softtabstop=2")
 vim.cmd("set shiftwidth=2")
 vim.cmd("set number")   
-vim.g.mapleader = ' '
+vim.opt.clipboard = "unnamedplus"
 
 vim.api.nvim_create_autocmd("VimEnter", {
   callback = function()
@@ -19,6 +19,19 @@ vim.api.nvim_create_autocmd("VimEnter", {
         vim.cmd("Neotree filesystem show left")
       end
     end, 50)
+  end,
+})
+
+vim.api.nvim_create_autocmd("BufLeave", {
+  pattern = "*",
+  once = true,
+  callback = function()
+    if vim.bo.filetype == "dashboard" then
+      vim.defer_fn(function()
+        vim.cmd("ToggleTerm")
+        vim.cmd("Neotree filesystem show left")
+      end, 50)
+    end
   end,
 })
 
@@ -102,6 +115,10 @@ local plugins = {
           theme = 'hyper',
           config = {
           header = {
+        "                                                               ",
+        "                                                               ",
+        "                                                               ",
+        "                                                               ",
         " ▄████████  ▄██████▄    ▄▄▄▄███▄▄▄▄      ▄████████             ",
         "███    ███ ███    ███ ▄██▀▀▀███▀▀▀██▄   ███    ███             ",
         "███    █▀  ███    ███ ███   ███   ███   ███    █▀              ",
@@ -136,13 +153,15 @@ local plugins = {
           { icon = " ", desc = " Find Word", action = "Telescope live_grep", key = "g" },
           { icon = " ", desc = " Restore Session", action = "SessionLoad", key = "s" },
         },
-        footer = { "🚀 Neovim powered by Lazy.nvim" }
+        footer = { "Europa League Champions 2024/25" }
       }
     }
     end
   },
+  {
+    'tpope/vim-commentary' 
+  }
 }
-
 
 local opts = {}
 
@@ -152,23 +171,46 @@ local builtin = require("telescope.builtin")
 vim.api.nvim_set_keymap("x", "<Tab>", ">gv",   { noremap = true, silent = true })
 vim.api.nvim_set_keymap("x", "<S-Tab>", "<gv", { noremap = true, silent = true })
 vim.keymap.set('n', '<C-p>', builtin.find_files, {})
-vim.keymap.set('n', '<leader>fg', builtin.live_grep, {})
 vim.keymap.set('n', '<C-n>', ':Neotree filesystem reveal left<CR>')
 vim.keymap.set('n', '<D-a>', 'ggVG', { noremap = true, silent = true })
 
--- Copy to system clipboard in NORMAL/ VISUAL
-vim.keymap.set({'n','v'}, '<D-c>', '"+y', { noremap = true, silent = true })
-vim.keymap.set({'n','v'}, '<C-c>', '"+y', { noremap = true, silent = true })
+vim.keymap.set({'n', 'x', 'o'}, 'H', '^')
+vim.keymap.set({'n', 'x', 'o'}, 'L', '$')
 
--- Paste from system clipboard in NORMAL/ VISUAL
-vim.keymap.set({'n','v'}, '<D-v>', '"+p', { noremap = true, silent = true })
-vim.keymap.set({'n','v'}, '<C-v>', '"+p', { noremap = true, silent = true })
+vim.keymap.set({"n", "v", "o"}, "<C-c>", "\"+y<Esc>", { noremap = true, silent = true })
+vim.keymap.set("n", "<C-S-c>", "V\"+y", { noremap = true, silent = true })
 
--- Paste from system clipboard in INSERT
-vim.keymap.set('i', '<D-v>', '<Esc>"+pa', { noremap = true, silent = true })
+-- Paste from system clipboard in NORMAL and VISUAL modes:
+vim.keymap.set({"n", "v"}, "<C-v>", '"+p', { noremap = true, silent = true })
 
--- Undo in NORMAL/ VISUAL with Command + z
-vim.keymap.set({'n','v'}, '<D-z>', 'u', { noremap = true, silent = true })
+-- Map Cmd+Z to undo (the same behavior as Ctrl+Z)
+vim.keymap.set('n', '<D-z>', '<C-z>', { noremap = true, silent = true })  -- Normal mode
+vim.keymap.set('v', '<D-z>', '<C-z>', { noremap = true, silent = true })  -- Visual mode
+
+-- in insert mode, exit insert mode, paste, and return to insert:
+vim.keymap.set("i", "<C-v>", '<esc>"+pa', { noremap = true, silent = true })
+
+-- undo in normal/ visual with command + z
+vim.keymap.set({'n','v'}, '<C-z>', 'u', { noremap = true, silent = true })
+
+vim.keymap.set("n", "<D-f>", function()
+  local ft = vim.bo.filetype
+  if ft == "toggleterm" or ft == "neo-tree" then
+    print("Search is disabled in this buffer")
+    return
+  end
+  require("telescope.builtin").current_buffer_fuzzy_find({
+    initial_mode = "insert",
+    prompt_title = "Search in Current File",
+  })
+end, { desc = "File-wide Search" })
+
+vim.keymap.set("n", "<D-S-f>", function()
+  require("telescope.builtin").live_grep({
+    search_dirs = { vim.fn.getcwd() },
+    prompt_title = "Directory-wide Search"
+  })
+end, { desc = "Directory-wide Search" })
 
 vim.cmd([[
   cnoreabbrev <expr> q! getcmdtype() == ":" && getcmdline() == 'q!' ? 'qa!' : 'q!'
@@ -178,11 +220,11 @@ vim.cmd([[
 ]])
 
 -- NORMAL mode: move the current line up/down
-vim.keymap.set('n', '<D-S-Up>',   ':m .-2<CR>==', { noremap = true, silent = true })
-vim.keymap.set('n', '<D-S-Down>', ':m .+1<CR>==', { noremap = true, silent = true })
+vim.keymap.set('n', '<C-S-Up>',   ':m .-2<CR>==', { noremap = true, silent = true })
+vim.keymap.set('n', '<C-S-Down>', ':m .+1<CR>==', { noremap = true, silent = true })
 -- VISUAL mode: move the highlighted lines up/down
-vim.keymap.set('v', '<D-S-Up>',   ":m '<-2<CR>gv=gv", { noremap = true, silent = true })
-vim.keymap.set('v', '<D-S-Down>', ":m '>+1<CR>gv=gv", { noremap = true, silent = true })
+vim.keymap.set('v', '<C-S-Up>',   ":m '<-2<CR>gv=gv", { noremap = true, silent = true })
+vim.keymap.set('v', '<C-S-Down>', ":m '>+1<CR>gv=gv", { noremap = true, silent = true })
 
 -- NORMAL mode: duplicate the current line above/below
 -- <D-Up>   -> yank this line, then paste above
@@ -192,6 +234,16 @@ vim.keymap.set('n', '<D-Down>', 'yyp', { noremap = true, silent = true })
 -- VISUAL mode: move the highlighted lines up/down
 vim.keymap.set('v', '<D-Down>', ":m '>+1<CR>gv=gv", { noremap = true, silent = true })
 vim.keymap.set('v', '<D-Up>',   ":m '<-2<CR>gv=gv", { noremap = true, silent = true })
+
+vim.keymap.set("n", "<D-S-Up>", "Vk", { noremap = true, silent = true })
+vim.keymap.set("n", "<D-S-Down>", "Vj", { noremap = true, silent = true })
+vim.keymap.set("v", "<D-S-Up>", "k", { noremap = true, silent = true })
+vim.keymap.set("v", "<D-S-Down>", "j", { noremap = true, silent = true })
+
+vim.keymap.set("n", "<D-S-Left>", "vh", { noremap = true, silent = true })
+vim.keymap.set("n", "<D-S-Right>", "vl", { noremap = true, silent = true })
+vim.api.nvim_set_keymap('v', '<D-S-Left>', 'h', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('v', '<D-S-Right>', 'l', { noremap = true, silent = true })
 
 local config = require("nvim-treesitter.configs")
 config.setup({
