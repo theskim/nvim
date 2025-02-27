@@ -5,35 +5,7 @@ vim.cmd("set shiftwidth=2")
 vim.cmd("set number")   
 vim.opt.clipboard = "unnamedplus"
 
-vim.api.nvim_create_autocmd("VimEnter", {
-  callback = function()
-    vim.defer_fn(function()
-      local args = vim.fn.argv()
-      if #args == 0 then
-        return
-      end
-      vim.cmd("ToggleTerm")
-      if #args == 1 and vim.fn.isdirectory(args[1]) == 1 then
-        -- Skip Neo-tree
-      else
-        vim.cmd("Neotree filesystem show left")
-      end
-    end, 50)
-  end,
-})
-
-vim.api.nvim_create_autocmd("BufLeave", {
-  pattern = "*",
-  once = true,
-  callback = function()
-    if vim.bo.filetype == "dashboard" then
-      vim.defer_fn(function()
-        vim.cmd("ToggleTerm")
-        vim.cmd("Neotree filesystem show left")
-      end, 50)
-    end
-  end,
-})
+require("layout").setup()
 
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
@@ -205,6 +177,21 @@ vim.keymap.set("n", "<D-f>", function()
   })
 end, { desc = "File-wide Search" })
 
+vim.keymap.set('n', '<D-p>', function()
+  require('telescope.builtin').find_files({
+    prompt_title = 'Find File',
+    attach_mappings = function(prompt_bufnr, map)
+      local actions = require('telescope.actions')
+      map('i', '<CR>', function()
+        actions.select_default(prompt_bufnr)
+        vim.cmd('tabnew ' .. vim.fn.expand("<cfile>"))
+      end)
+      return true
+    end
+  })
+end, { noremap = true, silent = true })
+
+
 vim.keymap.set("n", "<D-S-f>", function()
   require("telescope.builtin").live_grep({
     search_dirs = { vim.fn.getcwd() },
@@ -212,9 +199,6 @@ vim.keymap.set("n", "<D-S-f>", function()
   })
 end, { desc = "Directory-wide Search" })
 
-vim.cmd([[
-  cnoreabbrev <expr> q! getcmdtype() == ":" && getcmdline() == 'q!' ? 'qa!' : 'q!'
-]])
 vim.cmd([[
   tnoremap <Esc> <C-\><C-n>
 ]])
@@ -244,6 +228,19 @@ vim.keymap.set("n", "<D-S-Left>", "vh", { noremap = true, silent = true })
 vim.keymap.set("n", "<D-S-Right>", "vl", { noremap = true, silent = true })
 vim.api.nvim_set_keymap('v', '<D-S-Left>', 'h', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('v', '<D-S-Right>', 'l', { noremap = true, silent = true })
+
+local function create_file_ui()
+  local cwd = vim.fn.getcwd()
+  local input = vim.fn.input("📁 Enter filename: ", cwd .. "/")
+  if input == "" then
+    print("❌ No filename provided!")
+    return
+  end
+  vim.cmd("edit " .. input)
+  print("✅ File created: " .. input)
+end
+vim.api.nvim_create_user_command("CreateFile", create_file_ui, {})
+vim.keymap.set("n", "<D-p>", create_file_ui, { noremap = true, silent = true })
 
 local config = require("nvim-treesitter.configs")
 config.setup({
